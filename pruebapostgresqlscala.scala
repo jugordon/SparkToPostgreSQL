@@ -1,6 +1,5 @@
 // Databricks notebook source
 // DBTITLE 1,Bibliotecas y variables
-// Import Necessary Libraries
 import java.io.InputStream
 import java.sql.DriverManager
 import java.util.Properties
@@ -35,23 +34,15 @@ val path_tabla_delta = path_plata + "concepto/"
 sqlContext.setConf("spark.sql.shuffle.partitions", particiones)
 sqlContext.setConf("spark.default.parallelism", particiones)
 
-// COMMAND ----------
-
 // DBTITLE 1,Tabla delta fuente
 //Leyendo datos fuentes en formato parquet
 val parquetFileDF = spark.read.format("delta").load(path_tabla_delta) 
 parquetFileDF.count()
 
-// COMMAND ----------
-
 parquetFileDF.rdd.getNumPartitions
-
-// COMMAND ----------
 
 // DBTITLE 1,Prueba de escritura con jdbc ( multi row inserts)
 parquetFileDF.write.mode(SaveMode.Overwrite).jdbc(jdbcUrl, "db.table", connectionProperties)
-
-// COMMAND ----------
 
 // DBTITLE 1,Clase que permite la ingestión de datos utilizando CopyManager
 object CopyHelper extends Serializable {
@@ -96,8 +87,6 @@ object CopyHelper extends Serializable {
     }
   }
 }
-
-// COMMAND ----------
 
 // DBTITLE 1,Prueba de escritura con Copy
 CopyHelper.copyIn(jdbcUrl, parquetFileDF, "db.table")
