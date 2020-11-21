@@ -1,5 +1,6 @@
 // Databricks notebook source
-// DBTITLE 1,Bibliotecas y variables
+//TODO: #1 Make this a scala lib. importable to Spark
+// Bibliotecas y variables
 import java.io.InputStream
 import java.sql.DriverManager
 import java.util.Properties
@@ -34,17 +35,17 @@ val path_tabla_delta = path_plata + "concepto/"
 sqlContext.setConf("spark.sql.shuffle.partitions", particiones)
 sqlContext.setConf("spark.default.parallelism", particiones)
 
-// DBTITLE 1,Tabla delta fuente
+// Tabla delta fuente
 //Leyendo datos fuentes en formato parquet
 val parquetFileDF = spark.read.format("delta").load(path_tabla_delta) 
 parquetFileDF.count()
 
 parquetFileDF.rdd.getNumPartitions
 
-// DBTITLE 1,Prueba de escritura con jdbc ( multi row inserts)
+// Prueba de escritura con jdbc ( multi row inserts)
 parquetFileDF.write.mode(SaveMode.Overwrite).jdbc(jdbcUrl, "db.table", connectionProperties)
 
-// DBTITLE 1,Clase que permite la ingestión de datos utilizando CopyManager
+// Clase que permite la ingestión de datos utilizando CopyManager
 object CopyHelper extends Serializable {
 
   def rowsToInputStream(rows: Iterator[Row]): InputStream = {
@@ -76,17 +77,17 @@ object CopyHelper extends Serializable {
     df.rdd.foreachPartition { rows =>
       val conn = DriverManager.getConnection(url)
       try {
-        val cm = new CopyManager(conn.asInstanceOf[BaseConnection])
-        cm.copyIn(
-          s"COPY $table ($cols) " + """FROM STDIN WITH (NULL '\N', FORMAT CSV, DELIMITER E'\t')""",
-          rowsToInputStream(rows))
-        ()
+            val cm = new CopyManager(conn.asInstanceOf[BaseConnection])
+            cm.copyIn(
+              s"COPY $table ($cols) " + """FROM STDIN WITH (NULL '\N', FORMAT CSV, DELIMITER E'\t')""",
+              rowsToInputStream(rows))
+            ()
       } finally {
-        conn.close()
+            conn.close()
       }
     }
   }
 }
 
-// DBTITLE 1,Prueba de escritura con Copy
+// Prueba de escritura con Copy
 CopyHelper.copyIn(jdbcUrl, parquetFileDF, "db.table")
